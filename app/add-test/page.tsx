@@ -795,7 +795,7 @@ const CreateTestPage: React.FC = () => {
 			};
 
 			const res = await fetch(
-				'http://testorium-server-production.up.railway.app/tests',
+				'https://testorium-server-production.up.railway.app/tests',
 				{
 					method: 'POST',
 					headers: {

@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 			try {
 				const res = await fetch(
-					'http://testorium-server-production.up.railway.app/auth/me',
+					'https://testorium-server-production.up.railway.app/auth/me',
 					{
 						headers: {
 							Authorization: `Bearer ${storedToken}`,

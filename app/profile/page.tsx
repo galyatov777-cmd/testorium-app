@@ -31,7 +31,7 @@ export default function Profile() {
 				const token = localStorage.getItem('token');
 
 				const res = await fetch(
-					'http://testorium-server-production.up.railway.app/tests/my',
+					'https://testorium-server-production.up.railway.app/tests/my',
 					{
 						headers: {
 							Authorization: `Bearer ${token}`,

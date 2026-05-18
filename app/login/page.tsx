@@ -42,7 +42,7 @@ export default function Login() {
 
 		try {
 			const res = await fetch(
-				'http://testorium-server-production.up.railway.app/auth/login',
+				'https://testorium-server-production.up.railway.app/auth/login',
 				{
 					method: 'POST',
 					headers: {
