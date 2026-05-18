@@ -30,11 +30,14 @@ export default function Profile() {
 			try {
 				const token = localStorage.getItem('token');
 
-				const res = await fetch('http://localhost:3003/tests/my', {
-					headers: {
-						Authorization: `Bearer ${token}`,
+				const res = await fetch(
+					'http://testorium-server-production.up.railway.app/tests/my',
+					{
+						headers: {
+							Authorization: `Bearer ${token}`,
+						},
 					},
-				});
+				);
 
 				const data = await res.json();
 

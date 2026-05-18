@@ -41,13 +41,16 @@ export default function Login() {
 		setLoading(true);
 
 		try {
-			const res = await fetch('http://localhost:3003/auth/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
+			const res = await fetch(
+				'http://testorium-server-production.up.railway.app/auth/login',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ email, password }),
 				},
-				body: JSON.stringify({ email, password }),
-			});
+			);
 
 			const data = await res.json();
 

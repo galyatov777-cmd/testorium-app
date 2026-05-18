@@ -361,7 +361,9 @@ const TakeTestPage: React.FC = () => {
 	useEffect(() => {
 		const fetchTest = async () => {
 			try {
-				const res = await fetch(`http://localhost:3003/tests/${id}`);
+				const res = await fetch(
+					`http://testorium-server-production.up.railway.app/tests/${id}`,
+				);
 				if (!res.ok) throw new Error('Failed to load test');
 				const data = await res.json();
 				setTest(data);

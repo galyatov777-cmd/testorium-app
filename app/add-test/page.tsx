@@ -794,14 +794,17 @@ const CreateTestPage: React.FC = () => {
 				questions: preparedQuestions,
 			};
 
-			const res = await fetch('http://localhost:3003/tests', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					...(token ? { Authorization: `Bearer ${token}` } : {}),
+			const res = await fetch(
+				'http://testorium-server-production.up.railway.app/tests',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						...(token ? { Authorization: `Bearer ${token}` } : {}),
+					},
+					body: JSON.stringify(payload),
 				},
-				body: JSON.stringify(payload),
-			});
+			);
 
 			const result = await res.json();
 			if (!res.ok) throw new Error(result.error ?? 'Server error');
