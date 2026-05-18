@@ -1,0 +1,52 @@
+[
+	{
+		"title": "Математика 8 клас",
+		"count": 20,
+		"completed": 18,
+		"score": "90%",
+		"average": "85%",
+		"estimatedTime": 40,
+		"lastAttemptDate": "12 трав 2025",
+		"rank": 3
+	},
+	{
+		"title": "Українська мова 8 клас",
+		"count": 15,
+		"completed": 12,
+		"score": "80%",
+		"average": "78%",
+		"estimatedTime": 35,
+		"lastAttemptDate": "10 трав 2025",
+		"rank": 5
+	},
+	{
+		"title": "Історія України 8 клас",
+		"count": 10,
+		"completed": 9,
+		"score": "85%",
+		"average": "82%",
+		"estimatedTime": 25,
+		"lastAttemptDate": "8 трав 2025",
+		"rank": 4
+	},
+	{
+		"title": "Географія 8 клас",
+		"count": 12,
+		"completed": 10,
+		"score": "83%",
+		"average": "80%",
+		"estimatedTime": 30,
+		"lastAttemptDate": "6 трав 2025",
+		"rank": 6
+	},
+	{
+		"title": "Фізика 8 клас",
+		"count": 18,
+		"completed": 16,
+		"score": "88%",
+		"average": "84%",
+		"estimatedTime": 45,
+		"lastAttemptDate": "5 трав 2025",
+		"rank": 2
+	}
+]
