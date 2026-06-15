@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Діаграма компонентів — Testorium</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: #0f172a; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+    #cy { width: 100%; height: 100vh; }
+    #legend {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      background: rgba(15,23,42,0.85); backdrop-filter: blur(6px);
+      border: 1px solid #334155; border-radius: 10px; padding: 8px 14px;
+      z-index: 10;
+    }
+    .li { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; }
+    #title {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(15,23,42,0.85); backdrop-filter: blur(6px);
+      border: 1px solid #334155; border-radius: 8px; padding: 6px 16px;
+      font-size: 13px; font-weight: 600; color: #f1f5f9; z-index: 10;
+      white-space: nowrap;
+    }
+    #hint {
+      position: fixed; top: 12px; right: 14px;
+      font-size: 10px; color: #475569; z-index: 10;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">Діаграма компонентів — Testorium</div>
+  <div id="hint">скрол — зум&nbsp;&nbsp;|&nbsp;&nbsp;перетягнути — пан</div>
+  <div id="cy"></div>
+  <div id="legend">
+    <div class="li"><div class="dot" style="background:#1d4ed8"></div>Сторінки</div>
+    <div class="li"><div class="dot" style="background:#7c3aed"></div>Лейаут/секції</div>
+    <div class="li"><div class="dot" style="background:#047857"></div>UI компоненти</div>
+    <div class="li"><div class="dot" style="background:#b45309"></div>Провайдери</div>
+    <div class="li"><div class="dot" style="background:#4338ca"></div>Стан/сервіси</div>
+    <div class="li"><div class="dot" style="background:#b91c1c"></div>API</div>
+    <div class="li"><div class="dot" style="background:#334155"></div>Root</div>
+  </div>
+
+  <script>
+    cytoscape.use(cytoscapeDagre);
+
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+      elements: {
+        nodes: [
+          { data: { id: 'RL',  label: 'RootLayout',       type: 'root'      } },
+          { data: { id: 'AP',  label: 'AuthProvider',     type: 'provider'  } },
+          { data: { id: 'PR',  label: 'ProtectedRoute',   type: 'provider'  } },
+          { data: { id: 'HD',  label: 'Header',           type: 'layout'    } },
+          { data: { id: 'FT',  label: 'Footer',           type: 'layout'    } },
+          { data: { id: 'PH',  label: '/ Головна',        type: 'page'      } },
+          { data: { id: 'PL',  label: '/login',           type: 'page'      } },
+          { data: { id: 'PRG', label: '/register',        type: 'page'      } },
+          { data: { id: 'PPR', label: '/profile',         type: 'page'      } },
+          { data: { id: 'PAT', label: '/add-test',        type: 'page'      } },
+          { data: { id: 'PT',  label: '/test/id',         type: 'page'      } },
+          { data: { id: 'PC',  label: '/contacts',        type: 'page'      } },
+          { data: { id: 'PPP', label: '/privacy-policy',  type: 'page'      } },
+          { data: { id: 'HR',  label: 'Hero',             type: 'section'   } },
+          { data: { id: 'FE',  label: 'Features',         type: 'section'   } },
+          { data: { id: 'WH',  label: 'Whom',             type: 'section'   } },
+          { data: { id: 'PRO', label: 'Process',          type: 'section'   } },
+          { data: { id: 'WE',  label: 'WhomElement',      type: 'component' } },
+          { data: { id: 'MI',  label: 'MainInfo',         type: 'component' } },
+          { data: { id: 'TST', label: 'Tests',            type: 'component' } },
+          { data: { id: 'ST',  label: 'Stats',            type: 'component' } },
+          { data: { id: 'SE',  label: 'Settings',         type: 'component' } },
+          { data: { id: 'TC',  label: 'TestCard',         type: 'component' } },
+          { data: { id: 'SI',  label: 'StatItem',         type: 'component' } },
+          { data: { id: 'QI',  label: 'QuestionItem',     type: 'component' } },
+          { data: { id: 'TG',  label: 'Toggle',           type: 'component' } },
+          { data: { id: 'SM',  label: 'SuccessModal',     type: 'component' } },
+          { data: { id: 'VB',  label: 'ValidationBanner', type: 'component' } },
+          { data: { id: 'RS',  label: 'ResultScreen',     type: 'component' } },
+          { data: { id: 'AC',  label: 'useAuth',          type: 'state'     } },
+          { data: { id: 'ZS',  label: 'Zustand Store',    type: 'state'     } },
+          { data: { id: 'SV',  label: 'auth.service',     type: 'state'     } },
+          { data: { id: 'B1',  label: '/auth/login',      type: 'api'       } },
+          { data: { id: 'B2',  label: '/auth/register',   type: 'api'       } },
+          { data: { id: 'B3',  label: '/auth/me',         type: 'api'       } },
+          { data: { id: 'B4',  label: '/tests',           type: 'api'       } },
+          { data: { id: 'B5',  label: '/tests/my',        type: 'api'       } },
+          { data: { id: 'B6',  label: '/tests/start',     type: 'api'       } },
+          { data: { id: 'B7',  label: '/tests/answer',    type: 'api'       } },
+          { data: { id: 'B8',  label: '/users/me',        type: 'api'       } },
+        ],
+        edges: [
+          { data: { source: 'RL',  target: 'AP'  } },
+          { data: { source: 'RL',  target: 'HD'  } },
+          { data: { source: 'RL',  target: 'FT'  } },
+          { data: { source: 'AP',  target: 'AC'  } },
+          { data: { source: 'HD',  target: 'AC'  } },
+          { data: { source: 'AP',  target: 'PH'  } },
+          { data: { source: 'AP',  target: 'PL'  } },
+          { data: { source: 'AP',  target: 'PRG' } },
+          { data: { source: 'AP',  target: 'PPR' } },
+          { data: { source: 'AP',  target: 'PAT' } },
+          { data: { source: 'AP',  target: 'PT'  } },
+          { data: { source: 'AP',  target: 'PC'  } },
+          { data: { source: 'AP',  target: 'PPP' } },
+          { data: { source: 'PH',  target: 'HR'  } },
+          { data: { source: 'PH',  target: 'FE'  } },
+          { data: { source: 'PH',  target: 'WH'  } },
+          { data: { source: 'PH',  target: 'PRO' } },
+          { data: { source: 'WH',  target: 'WE'  } },
+          { data: { source: 'PL',  target: 'AC'  } },
+          { data: { source: 'PL',  target: 'B1'  } },
+          { data: { source: 'PRG', target: 'AC'  } },
+          { data: { source: 'PRG', target: 'B2'  } },
+          { data: { source: 'PPR', target: 'PR'  } },
+          { data: { source: 'PPR', target: 'MI'  } },
+          { data: { source: 'PPR', target: 'TST' } },
+          { data: { source: 'PPR', target: 'ST'  } },
+          { data: { source: 'PPR', target: 'SE'  } },
+          { data: { source: 'PPR', target: 'B5'  } },
+          { data: { source: 'PR',  target: 'AC'  } },
+          { data: { source: 'MI',  target: 'AC'  } },
+          { data: { source: 'SE',  target: 'AC'  } },
+          { data: { source: 'SE',  target: 'B8'  } },
+          { data: { source: 'TST', target: 'TC'  } },
+          { data: { source: 'ST',  target: 'SI'  } },
+          { data: { source: 'PAT', target: 'QI'  } },
+          { data: { source: 'PAT', target: 'TG'  } },
+          { data: { source: 'PAT', target: 'SM'  } },
+          { data: { source: 'PAT', target: 'VB'  } },
+          { data: { source: 'PAT', target: 'B4'  } },
+          { data: { source: 'PT',  target: 'RS'  } },
+          { data: { source: 'PT',  target: 'B4'  } },
+          { data: { source: 'PT',  target: 'B6'  } },
+          { data: { source: 'PT',  target: 'B7'  } },
+          { data: { source: 'ZS',  target: 'SV'  } },
+          { data: { source: 'SV',  target: 'B1'  } },
+          { data: { source: 'SV',  target: 'B2'  } },
+          { data: { source: 'SV',  target: 'B3'  } },
+          { data: { source: 'AC',  target: 'B3'  } },
+        ]
+      },
+      layout: {
+        name: 'dagre',
+        rankDir: 'LR',
+        nodeSep: 6,
+        rankSep: 40,
+        edgeSep: 2,
+        ranker: 'network-simplex',
+        animate: false,
+        padding: 20
+      },
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'label': 'data(label)',
+            'font-size': '10px',
+            'font-family': 'Segoe UI, sans-serif',
+            'color': '#fff',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'text-wrap': 'wrap',
+            'text-max-width': '90px',
+            'shape': 'round-rectangle',
+            'width': 'label',
+            'height': '20px',
+            'padding': '3px',
+            'border-width': 1,
+            'background-color': '#1e293b',
+            'border-color': '#475569'
+          }
+        },
+        { selector: 'node[type="root"]',      style: { 'background-color': '#1e293b', 'border-color': '#94a3b8', 'border-width': 2, 'font-weight': 'bold' } },
+        { selector: 'node[type="page"]',      style: { 'background-color': '#1d4ed8', 'border-color': '#3b82f6' } },
+        { selector: 'node[type="layout"]',    style: { 'background-color': '#6d28d9', 'border-color': '#a78bfa' } },
+        { selector: 'node[type="section"]',   style: { 'background-color': '#7c3aed', 'border-color': '#a78bfa' } },
+        { selector: 'node[type="component"]', style: { 'background-color': '#047857', 'border-color': '#34d399' } },
+        { selector: 'node[type="provider"]',  style: { 'background-color': '#b45309', 'border-color': '#fbbf24' } },
+        { selector: 'node[type="state"]',     style: { 'background-color': '#4338ca', 'border-color': '#818cf8' } },
+        { selector: 'node[type="api"]',       style: { 'background-color': '#991b1b', 'border-color': '#f87171' } },
+        {
+          selector: 'edge',
+          style: {
+            'width': 1,
+            'line-color': '#475569',
+            'target-arrow-color': '#94a3b8',
+            'target-arrow-shape': 'triangle',
+            'arrow-scale': 0.6,
+            'curve-style': 'bezier',
+            'opacity': 0.8
+          }
+        },
+        {
+          selector: 'node:selected',
+          style: { 'border-width': 2, 'border-color': '#f8fafc' }
+        },
+        {
+          selector: 'edge:selected',
+          style: { 'line-color': '#f8fafc', 'target-arrow-color': '#f8fafc', 'width': 2 }
+        }
+      ],
+      userZoomingEnabled: true,
+      userPanningEnabled: true,
+      boxSelectionEnabled: false,
+      minZoom: 0.2,
+      maxZoom: 4
+    });
+
+    // fit to viewport after layout
+    cy.ready(() => cy.fit(undefined, 20));
+  </script>
+</body>
+</html>
