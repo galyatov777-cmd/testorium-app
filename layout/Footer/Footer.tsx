@@ -1,23 +1,32 @@
+'use client';
+
 import Link from 'next/link';
 import React from 'react';
+import { useAuth } from '../AuthProvider/AuthProvider';
 
 const Footer = () => {
+	const { user } = useAuth();
+
 	return (
 		<footer className='border-t border-slate-100 pt-20 pb-10 px-6 bg-white'>
 			<div className='max-w-7xl mx-auto'>
-				{/* CTA */}
-				<div className='text-center max-w-2xl mx-auto mb-24 py-6'>
-					<h2 className='text-3xl md:text-4xl font-semibold tracking-tight mb-4'>
-						Готові підвищити якість освіти?
-					</h2>
-					<p className='text-slate-600 mb-6'>
-						Почніть використовувати Testorium вже сьогодні — без складних
-						налаштувань.
-					</p>
-					<button className='bg-indigo-600 text-white px-8 py-3 rounded-xl font-medium text-base hover:shadow-lg hover:shadow-indigo-200 transition'>
-						Зареєструватися
-					</button>
-				</div>
+				{/* CTA — тільки для незареєстрованих */}
+				{!user && (
+					<div className='text-center max-w-2xl mx-auto mb-24 py-6'>
+						<h2 className='text-3xl md:text-4xl font-semibold tracking-tight mb-4'>
+							Готовий перевірити свої знання?
+						</h2>
+						<p className='text-slate-600 mb-6'>
+							Зареєструйся і вже сьогодні пройди тестування з освітніх компонентів — зручно, швидко і безкоштовно.
+						</p>
+						<Link
+							href='/register'
+							className='inline-block bg-indigo-600 text-white px-8 py-3 rounded-xl font-medium text-base hover:shadow-lg hover:shadow-indigo-200 transition'
+						>
+							Зареєструватися
+						</Link>
+					</div>
+				)}
 
 				{/* Main grid */}
 				<div className='grid md:grid-cols-4 gap-10 mb-16'>
@@ -30,13 +39,28 @@ const Footer = () => {
 						</p>
 
 						<div className='flex gap-4 text-slate-400 text-sm'>
-							<a href='#' className='hover:text-indigo-600 transition'>
+							<a
+								href='https://t.me/vstup_ontu'
+								target='_blank'
+								rel='noopener noreferrer'
+								className='hover:text-indigo-600 transition'
+							>
 								Telegram
 							</a>
-							<a href='#' className='hover:text-indigo-600 transition'>
+							<a
+								href='https://www.facebook.com/infoONTU'
+								target='_blank'
+								rel='noopener noreferrer'
+								className='hover:text-indigo-600 transition'
+							>
 								Facebook
 							</a>
-							<a href='#' className='hover:text-indigo-600 transition'>
+							<a
+								href='https://www.instagram.com/ontu__official'
+								target='_blank'
+								rel='noopener noreferrer'
+								className='hover:text-indigo-600 transition'
+							>
 								Instagram
 							</a>
 						</div>
@@ -83,14 +107,29 @@ const Footer = () => {
 					<p>© 2026 Testorium. Усі права захищено.</p>
 
 					<div className='flex gap-6 mt-4 md:mt-0'>
-						<a href='#' className='hover:text-slate-600 transition'>
+						<a
+							href='https://t.me/vstup_ontu'
+							target='_blank'
+							rel='noopener noreferrer'
+							className='hover:text-slate-600 transition'
+						>
 							Telegram
 						</a>
-						<a href='#' className='hover:text-slate-600 transition'>
-							WhatsApp
+						<a
+							href='https://www.facebook.com/infoONTU'
+							target='_blank'
+							rel='noopener noreferrer'
+							className='hover:text-slate-600 transition'
+						>
+							Facebook
 						</a>
-						<a href='#' className='hover:text-slate-600 transition'>
-							Viber
+						<a
+							href='https://www.instagram.com/ontu__official'
+							target='_blank'
+							rel='noopener noreferrer'
+							className='hover:text-slate-600 transition'
+						>
+							Instagram
 						</a>
 					</div>
 				</div>

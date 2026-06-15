@@ -22,7 +22,7 @@ import { useParams } from 'next/navigation';
 type QuestionType = 'single' | 'multiple' | 'text' | 'truefalse';
 
 type Answer = {
-	id?: number;
+	id: number;
 	text: string;
 };
 
@@ -31,10 +31,6 @@ type Question = {
 	type: QuestionType;
 	question: string;
 	answers?: Answer[];
-	correctIndex?: number;
-	correctIndexes?: boolean[];
-	correctText?: string;
-	correctBool?: boolean;
 };
 
 type Test = {
@@ -44,7 +40,17 @@ type Test = {
 	questions: Question[];
 };
 
-type UserAnswers = Record<number, number | boolean[] | string | boolean>;
+// answer_ids вибрані юзером — масив id з таблиці answers
+type UserAnswers = Record<number, number[]>; // question_id → answer_ids[]
+
+type QuestionResult = {
+	is_correct: boolean;
+	score: number;
+	correct: number;
+	total: number;
+};
+
+type Results = Record<number, QuestionResult>; // question_id → result
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -90,27 +96,6 @@ const colorMap: Record<
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function isCorrect(
-	q: Question,
-	answer: UserAnswers[number] | undefined,
-): boolean {
-	if (answer === undefined) return false;
-	if (q.type === 'single') return answer === q.correctIndex;
-	if (q.type === 'truefalse') return answer === q.correctBool;
-	if (q.type === 'text')
-		return (
-			String(answer).trim().toLowerCase() ===
-			String(q.correctText ?? '')
-				.trim()
-				.toLowerCase()
-		);
-	if (q.type === 'multiple') {
-		const a = answer as boolean[];
-		return (q.correctIndexes ?? []).every((v, i) => v === (a[i] ?? false));
-	}
-	return false;
-}
-
 function formatTime(s: number) {
 	const m = Math.floor(s / 60);
 	const sec = s % 60;
@@ -122,15 +107,23 @@ function formatTime(s: number) {
 const ResultScreen: React.FC<{
 	questions: Question[];
 	answers: UserAnswers;
+	results: Results;
 	timeTaken: number;
 	onRetry: () => void;
 	test: Test;
-}> = ({ questions, answers, timeTaken, onRetry, test }) => {
+	finalScore: number;
+}> = ({
+	questions,
+	answers,
+	results,
+	timeTaken,
+	onRetry,
+	test,
+	finalScore,
+}) => {
 	const total = questions.length;
-	const correctCount = questions.filter(q =>
-		isCorrect(q, answers[q.id]),
-	).length;
-	const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+	const correctCount = Object.values(results).filter(r => r.is_correct).length;
+	const pct = finalScore;
 
 	const grade =
 		pct >= 90
@@ -236,45 +229,27 @@ const ResultScreen: React.FC<{
 						Розбір відповідей
 					</p>
 					{questions.map(q => {
-						const ok = isCorrect(q, answers[q.id]);
+						const result = results[q.id];
+						const ok = result?.is_correct ?? false;
 						const c = colorMap[q.type];
+						const selectedIds = answers[q.id] ?? [];
 
-						// BUG FIX: helpers to render answer text safely from Answer[] objects
 						const renderUserAnswer = () => {
-							const ans = answers[q.id];
-							if (ans === undefined) return '—';
-							if (q.type === 'single' && q.answers) {
-								const idx = ans as number;
-								return q.answers[idx]?.text ?? '—';
-							}
-							if (q.type === 'multiple' && q.answers) {
-								// BUG FIX: was calling .join() on Answer objects → [object Object]
-								const selected = q.answers
-									.filter((_, i) => (ans as boolean[])?.[i])
-									.map(a => a.text);
-								return selected.length > 0 ? selected.join(', ') : '—';
-							}
+							if (!selectedIds.length) return '—';
 							if (q.type === 'truefalse') {
-								return ans === true ? 'Так' : ans === false ? 'Ні' : '—';
+								const ans = q.answers?.find(a => selectedIds.includes(a.id));
+								return ans?.text === 'true' ? 'Так' : 'Ні';
 							}
-							if (q.type === 'text') return String(ans);
-							return '—';
-						};
-
-						const renderCorrectAnswer = () => {
-							if (q.type === 'single' && q.answers) {
-								return q.answers[q.correctIndex!]?.text ?? '—';
+							if (q.type === 'text') {
+								const ans = q.answers?.find(a => selectedIds.includes(a.id));
+								return ans?.text ?? '—';
 							}
-							if (q.type === 'multiple' && q.answers) {
-								// BUG FIX: same object mapping issue
-								return q.answers
-									.filter((_, i) => q.correctIndexes?.[i])
+							return (
+								q.answers
+									?.filter(a => selectedIds.includes(a.id))
 									.map(a => a.text)
-									.join(', ');
-							}
-							if (q.type === 'truefalse') return q.correctBool ? 'Так' : 'Ні';
-							if (q.type === 'text') return q.correctText ?? '';
-							return '—';
+									.join(', ') ?? '—'
+							);
 						};
 
 						return (
@@ -298,14 +273,6 @@ const ResultScreen: React.FC<{
 											<span className='font-semibold'>Ваша відповідь: </span>
 											{renderUserAnswer()}
 										</div>
-										{!ok && (
-											<div className='text-xs bg-emerald-50 text-emerald-700 rounded-xl px-3 py-2'>
-												<span className='font-semibold'>
-													Правильна відповідь:{' '}
-												</span>
-												{renderCorrectAnswer()}
-											</div>
-										)}
 									</div>
 									<div className='shrink-0'>
 										{ok ? (
@@ -338,13 +305,17 @@ const TakeTestPage: React.FC = () => {
 	const [test, setTest] = useState<Test | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [started, setStarted] = useState(false);
+	const [resultId, setResultId] = useState<number | null>(null);
 	const [current, setCurrent] = useState(0);
-	const [answers, setAnswers] = useState<UserAnswers>({});
+	const [answers, setAnswers] = useState<UserAnswers>({}); // question_id → answer_ids[]
+	const [textAnswers, setTextAnswers] = useState<Record<number, string>>({}); // для type=text
 	const [finished, setFinished] = useState(false);
+	const [results, setResults] = useState<Results>({});
+	const [finalScore, setFinalScore] = useState(0);
 	const [timeTaken, setTimeTaken] = useState(0);
 	const [flagged, setFlagged] = useState<Set<number>>(new Set());
+	const [submitting, setSubmitting] = useState(false);
 
-	// BUG FIX: timer — was never started, timeTaken was always 0
 	const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	useEffect(() => {
@@ -376,23 +347,151 @@ const TakeTestPage: React.FC = () => {
 		if (id) fetchTest();
 	}, [id]);
 
-	const handleFinish = useCallback(() => {
-		if (timerRef.current) clearInterval(timerRef.current);
+	// Стартуємо тест → отримуємо result_id
+	const handleStart = async () => {
+		try {
+			const token = localStorage.getItem('token');
+			const res = await fetch(
+				'https://testorium-server-production.up.railway.app/tests/start',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						...(token ? { Authorization: `Bearer ${token}` } : {}),
+					},
+					body: JSON.stringify({ test_id: test!.id }),
+				},
+			);
+			const data = await res.json();
+			setResultId(data.result_id);
+			setStarted(true);
+		} catch (err) {
+			console.error('START TEST ERROR:', err);
+			// якщо не авторизований — все одно стартуємо без result_id
+			setStarted(true);
+		}
+	};
+
+	// Сабмітимо одне питання
+	const submitQuestion = async (
+		questionId: number,
+		answerIds: number[] = [],
+		answerText = '',
+	) => {
+		if (!resultId) return null;
+
+		try {
+			const token = localStorage.getItem('token');
+
+			const payload = {
+				result_id: resultId,
+				question_id: questionId,
+				answer_ids: answerIds,
+				answer_text: answerText,
+			};
+
+			console.log('SUBMIT PAYLOAD:', payload);
+
+			const res = await fetch(
+				'https://testorium-server-production.up.railway.app/tests/answer',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						...(token
+							? {
+									Authorization: `Bearer ${token}`,
+								}
+							: {}),
+					},
+					body: JSON.stringify(payload),
+				},
+			);
+
+			const data = await res.json();
+
+			console.log('SUBMIT RESPONSE:', data);
+
+			return data;
+		} catch (err) {
+			console.error('SUBMIT ANSWER ERROR:', err);
+			return null;
+		}
+	};
+
+	// Завершення тесту — сабмітимо всі питання паралельно
+	const handleFinish = useCallback(async () => {
+		if (timerRef.current) {
+			clearInterval(timerRef.current);
+		}
+
+		if (!test) return;
+
+		setSubmitting(true);
+
+		const questions = test.questions ?? [];
+
+		let lastScore = 0;
+
+		const newResults: Results = {};
+
+		for (const q of questions) {
+			// ========================
+			// TEXT QUESTION
+			// ========================
+
+			if (q.type === 'text') {
+				const userText = textAnswers[q.id]?.trim() ?? '';
+
+				if (!userText) continue;
+
+				const result = await submitQuestion(q.id, [], userText);
+
+				if (result) {
+					newResults[q.id] = result;
+					lastScore = result.score;
+				}
+
+				continue;
+			}
+
+			// ========================
+			// OTHER TYPES
+			// ========================
+
+			const answerIds = answers[q.id]?.map(Number) ?? [];
+
+			if (!answerIds.length) continue;
+
+			const result = await submitQuestion(q.id, answerIds);
+
+			if (result) {
+				newResults[q.id] = result;
+				lastScore = result.score;
+			}
+		}
+
+		setResults(newResults);
+		setFinalScore(lastScore);
+
+		setSubmitting(false);
 		setFinished(true);
-	}, []);
+	}, [test, answers, textAnswers, resultId]);
 
 	const handleRetry = () => {
 		setStarted(false);
 		setFinished(false);
+		setResultId(null);
 		setCurrent(0);
 		setAnswers({});
+		setTextAnswers({});
+		setResults({});
+		setFinalScore(0);
 		setTimeTaken(0);
 		setFlagged(new Set());
 	};
 
-	// ── Early returns for loading/missing data ──
-	// BUG FIX: ALL derived variables (q, c, answered) moved BELOW early returns
-	// so they never execute when data is undefined → fixes "Cannot read properties of undefined"
+	// ── Early returns ──
 
 	if (loading) {
 		return (
@@ -410,6 +509,14 @@ const TakeTestPage: React.FC = () => {
 		);
 	}
 
+	if (submitting) {
+		return (
+			<div className='min-h-screen bg-slate-50 flex items-center justify-center'>
+				<div className='text-slate-400 text-sm'>Перевірка відповідей...</div>
+			</div>
+		);
+	}
+
 	const questions = test.questions ?? [];
 
 	if (finished) {
@@ -418,7 +525,9 @@ const TakeTestPage: React.FC = () => {
 				test={test}
 				questions={questions}
 				answers={answers}
+				results={results}
 				timeTaken={timeTaken}
+				finalScore={finalScore}
 				onRetry={handleRetry}
 			/>
 		);
@@ -449,7 +558,7 @@ const TakeTestPage: React.FC = () => {
 							{questions.length} питань
 						</div>
 						<button
-							onClick={() => setStarted(true)}
+							onClick={handleStart}
 							className='w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2'
 						>
 							Розпочати тест <ChevronRight size={16} />
@@ -460,10 +569,8 @@ const TakeTestPage: React.FC = () => {
 		);
 	}
 
-	// BUG FIX: q and derived values only computed here, after all guards pass
 	const q: Question | undefined = questions[current];
 
-	// Guard: if somehow current is out of bounds
 	if (!q) {
 		return (
 			<div className='min-h-screen bg-slate-50 flex items-center justify-center'>
@@ -472,14 +579,23 @@ const TakeTestPage: React.FC = () => {
 		);
 	}
 
-	const c = colorMap[q.type]; // safe — q is defined and q.type exists
-	const answered = answers[q.id];
+	const c = colorMap[q.type];
 	const totalAnswered = questions.filter(
-		q => answers[q.id] !== undefined,
+		q => (answers[q.id]?.length ?? 0) > 0 || textAnswers[q.id],
 	).length;
 
-	const setAnswer = (val: UserAnswers[number]) => {
-		setAnswers(prev => ({ ...prev, [q.id]: val }));
+	// Вибрати/зняти одну відповідь (single, truefalse)
+	const selectSingle = (answerId: number) => {
+		setAnswers(prev => ({ ...prev, [q.id]: [answerId] }));
+	};
+
+	// Toggle для multiple
+	const toggleMultiple = (answerId: number) => {
+		const prev = answers[q.id] ?? [];
+		const next = prev.includes(answerId)
+			? prev.filter(id => id !== answerId)
+			: [...prev, answerId];
+		setAnswers(prev => ({ ...prev, [q.id]: next }));
 	};
 
 	const toggleFlag = () => {
@@ -503,7 +619,6 @@ const TakeTestPage: React.FC = () => {
 					</span>
 				</div>
 				<div className='flex items-center gap-3'>
-					{/* BUG FIX: show live timer */}
 					<span className='text-xs font-mono text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg'>
 						{formatTime(timeTaken)}
 					</span>
@@ -538,10 +653,11 @@ const TakeTestPage: React.FC = () => {
 
 					<div className='flex-1 overflow-y-auto p-3 space-y-1'>
 						{questions.map((question, i) => {
-							// BUG FIX: guard — question could be undefined in edge cases
 							if (!question) return null;
 							const isActive = i === current;
-							const isAnswered = answers[question.id] !== undefined;
+							const isAnswered =
+								(answers[question.id]?.length ?? 0) > 0 ||
+								!!textAnswers[question.id];
 							const isFlagged = flagged.has(question.id);
 							const qc = colorMap[question.type];
 							return (
@@ -587,7 +703,6 @@ const TakeTestPage: React.FC = () => {
 							<div className={`h-1.5 w-full ${c.bg}`} />
 
 							<div className='p-7'>
-								{/* Question header */}
 								<div className='flex items-start justify-between gap-4 mb-6'>
 									<div className='flex items-center gap-2.5'>
 										<span className={`${c.light} ${c.text} p-2 rounded-xl`}>
@@ -617,32 +732,35 @@ const TakeTestPage: React.FC = () => {
 								{/* Single */}
 								{q.type === 'single' && q.answers && (
 									<div className='space-y-3'>
-										{q.answers.map((a, i) => (
-											<button
-												key={i}
-												onClick={() => setAnswer(i)}
-												className={`w-full text-left flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 transition-all ${
-													answered === i
-														? 'border-indigo-400 bg-indigo-50'
-														: 'border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/40'
-												}`}
-											>
-												<span
-													className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-														answered === i
-															? 'border-indigo-500 bg-indigo-500'
-															: 'border-slate-300'
+										{q.answers.map(a => {
+											const selected = answers[q.id]?.includes(a.id);
+											return (
+												<button
+													key={a.id}
+													onClick={() => selectSingle(a.id)}
+													className={`w-full text-left flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 transition-all ${
+														selected
+															? 'border-indigo-400 bg-indigo-50'
+															: 'border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/40'
 													}`}
 												>
-													{answered === i && (
-														<span className='w-2 h-2 bg-white rounded-full' />
-													)}
-												</span>
-												<span className='text-sm font-medium text-slate-700'>
-													{a.text}
-												</span>
-											</button>
-										))}
+													<span
+														className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+															selected
+																? 'border-indigo-500 bg-indigo-500'
+																: 'border-slate-300'
+														}`}
+													>
+														{selected && (
+															<span className='w-2 h-2 bg-white rounded-full' />
+														)}
+													</span>
+													<span className='text-sm font-medium text-slate-700'>
+														{a.text}
+													</span>
+												</button>
+											);
+										})}
 									</div>
 								)}
 
@@ -652,20 +770,12 @@ const TakeTestPage: React.FC = () => {
 										<p className='text-xs text-slate-400 mb-1'>
 											Оберіть усі правильні варіанти
 										</p>
-										{q.answers.map((a, i) => {
-											const checked =
-												(answers[q.id] as boolean[])?.[i] ?? false;
+										{q.answers.map(a => {
+											const checked = answers[q.id]?.includes(a.id) ?? false;
 											return (
 												<button
-													key={i}
-													onClick={() => {
-														const prev =
-															(answers[q.id] as boolean[]) ??
-															Array(q.answers!.length).fill(false);
-														const next = [...prev];
-														next[i] = !next[i];
-														setAnswer(next);
-													}}
+													key={a.id}
+													onClick={() => toggleMultiple(a.id)}
 													className={`w-full text-left flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 transition-all ${
 														checked
 															? 'border-violet-400 bg-violet-50'
@@ -697,8 +807,13 @@ const TakeTestPage: React.FC = () => {
 								{/* Text */}
 								{q.type === 'text' && (
 									<textarea
-										value={String(answers[q.id] ?? '')}
-										onChange={e => setAnswer(e.target.value)}
+										value={textAnswers[q.id] ?? ''}
+										onChange={e =>
+											setTextAnswers(prev => ({
+												...prev,
+												[q.id]: e.target.value,
+											}))
+										}
 										placeholder='Введіть вашу відповідь...'
 										rows={4}
 										className='w-full text-sm text-slate-800 placeholder-slate-300 bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-50 transition-all'
@@ -706,23 +821,29 @@ const TakeTestPage: React.FC = () => {
 								)}
 
 								{/* True/False */}
-								{q.type === 'truefalse' && (
+								{q.type === 'truefalse' && q.answers && (
 									<div className='grid grid-cols-2 gap-4'>
-										{([true, false] as const).map(val => (
-											<button
-												key={String(val)}
-												onClick={() => setAnswer(val)}
-												className={`py-5 rounded-2xl border-2 text-base font-semibold transition-all ${
-													answered === val
-														? val
-															? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-															: 'border-red-400 bg-red-50 text-red-700'
-														: 'border-slate-200 text-slate-400 hover:border-pink-200 hover:bg-pink-50/40'
-												}`}
-											>
-												{val ? '✓ Так' : '✗ Ні'}
-											</button>
-										))}
+										{q.answers.map(a => {
+											const selected = answers[q.id]?.includes(a.id);
+											const isTrue =
+												a.text.toLowerCase() === 'true' ||
+												a.text.toLowerCase() === 'так';
+											return (
+												<button
+													key={a.id}
+													onClick={() => selectSingle(a.id)}
+													className={`py-5 rounded-2xl border-2 text-base font-semibold transition-all ${
+														selected
+															? isTrue
+																? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+																: 'border-red-400 bg-red-50 text-red-700'
+															: 'border-slate-200 text-slate-400 hover:border-pink-200 hover:bg-pink-50/40'
+													}`}
+												>
+													{isTrue ? '✓ Так' : '✗ Ні'}
+												</button>
+											);
+										})}
 									</div>
 								)}
 							</div>
@@ -745,7 +866,8 @@ const TakeTestPage: React.FC = () => {
 											className={`h-2 rounded-full transition-all ${
 												i === current
 													? 'bg-indigo-600 w-4'
-													: answers[questions[i]?.id] !== undefined
+													: (answers[questions[i]?.id]?.length ?? 0) > 0 ||
+														  textAnswers[questions[i]?.id]
 														? 'bg-indigo-300 w-2'
 														: 'bg-slate-200 w-2'
 											}`}

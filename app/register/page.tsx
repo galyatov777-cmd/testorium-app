@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/layout/AuthProvider/AuthProvider';
 
 export default function Register() {
+	const { setAuthData, user } = useAuth();
+	const router = useRouter();
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
@@ -16,7 +19,12 @@ export default function Register() {
 		confirmPassword?: string;
 	}>({});
 	const [loading, setLoading] = useState(false);
-	const router = useRouter();
+
+	useEffect(() => {
+		if (user) {
+			router.replace('/profile');
+		}
+	}, [user, router]);
 
 	const validate = () => {
 		const newErrors: typeof errors = {};
@@ -59,14 +67,8 @@ export default function Register() {
 				'https://testorium-server-production.up.railway.app/auth/register',
 				{
 					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({
-						full_name: name,
-						email,
-						password,
-					}),
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ full_name: name, email, password }),
 				},
 			);
 
@@ -78,10 +80,11 @@ export default function Register() {
 			}
 
 			localStorage.setItem('token', data.token);
+			setAuthData(data.token, data.user);
 
-			alert('Акаунт створено');
-
-			router.push('/profile');
+			setTimeout(() => {
+				router.push('/profile');
+			}, 100);
 		} catch (err) {
 			console.error(err);
 			alert('Server error');
@@ -93,7 +96,6 @@ export default function Register() {
 	return (
 		<main className='min-h-[85vh] flex items-center justify-center bg-white text-slate-900 selection:bg-indigo-100 px-6'>
 			<div className='w-full max-w-md'>
-				{/* Card */}
 				<div className='border border-slate-200 rounded-2xl p-8 shadow-sm'>
 					<h1 className='text-2xl font-semibold mb-2'>
 						Створити обліковий запис
@@ -104,7 +106,6 @@ export default function Register() {
 					</p>
 
 					<form onSubmit={handleSubmit} className='space-y-5'>
-						{/* Name */}
 						<div>
 							<label className='block text-sm font-medium mb-1'>
 								Ім&apos;я
@@ -125,7 +126,6 @@ export default function Register() {
 							)}
 						</div>
 
-						{/* Email */}
 						<div>
 							<label className='block text-sm font-medium mb-1'>Пошта</label>
 							<input
@@ -144,7 +144,6 @@ export default function Register() {
 							)}
 						</div>
 
-						{/* Password */}
 						<div>
 							<label className='block text-sm font-medium mb-1'>Пароль</label>
 							<input
@@ -163,7 +162,6 @@ export default function Register() {
 							)}
 						</div>
 
-						{/* Confirm Password */}
 						<div>
 							<label className='block text-sm font-medium mb-1'>
 								Підтвердити пароль
@@ -186,7 +184,6 @@ export default function Register() {
 							)}
 						</div>
 
-						{/* Submit */}
 						<button
 							type='submit'
 							disabled={loading}
@@ -198,10 +195,8 @@ export default function Register() {
 						</button>
 					</form>
 
-					{/* Divider */}
 					<div className='my-6 border-t border-slate-100' />
 
-					{/* Login */}
 					<div className='text-center text-sm text-slate-500'>
 						Вже маєте обліковий запис?{' '}
 						<Link

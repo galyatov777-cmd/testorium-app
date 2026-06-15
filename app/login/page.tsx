@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/layout/AuthProvider/AuthProvider';
 
 export default function Login() {
-	const { setAuthData } = useAuth();
+	const { setAuthData, user } = useAuth();
 	const router = useRouter();
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
@@ -14,6 +14,12 @@ export default function Login() {
 		{},
 	);
 	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (user) {
+			router.replace('/profile');
+		}
+	}, [user, router]);
 
 	const validate = () => {
 		const newErrors: typeof errors = {};
@@ -33,6 +39,7 @@ export default function Login() {
 		setErrors(newErrors);
 		return Object.keys(newErrors).length === 0;
 	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -45,9 +52,7 @@ export default function Login() {
 				'https://testorium-server-production.up.railway.app/auth/login',
 				{
 					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
+					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ email, password }),
 				},
 			);
@@ -58,15 +63,10 @@ export default function Login() {
 				throw new Error(data.message || 'Login error');
 			}
 
-			// ❗ 1. Сначала сохраняем токен напрямую
 			localStorage.setItem('token', data.token);
-
-			// ❗ 2. Потом обновляем контекст
 			setAuthData(data.token, data.user);
 
-			// ❗ 3. Небольшая задержка (важно для Next.js)
 			setTimeout(() => {
-				console.log('LOGIN RESPONSE:', data);
 				router.push('/profile');
 			}, 100);
 		} catch (err: any) {
@@ -79,7 +79,6 @@ export default function Login() {
 	return (
 		<main className='min-h-[85vh] flex items-center justify-center bg-white text-slate-900 selection:bg-indigo-100 px-6'>
 			<div className='w-full max-w-md'>
-				{/* Card */}
 				<div className='border border-slate-200 rounded-2xl p-8 shadow-sm'>
 					<h1 className='text-2xl font-semibold mb-2'>
 						Залогінитися в Testorium
@@ -89,7 +88,6 @@ export default function Login() {
 					</p>
 
 					<form onSubmit={handleSubmit} className='space-y-5'>
-						{/* Email */}
 						<div>
 							<label className='block text-sm font-medium mb-1'>Пошта</label>
 							<input
@@ -108,7 +106,6 @@ export default function Login() {
 							)}
 						</div>
 
-						{/* Password */}
 						<div>
 							<label className='block text-sm font-medium mb-1'>Пароль</label>
 							<input
@@ -127,7 +124,6 @@ export default function Login() {
 							)}
 						</div>
 
-						{/* Login button */}
 						<button
 							type='submit'
 							disabled={loading}
@@ -137,10 +133,8 @@ export default function Login() {
 						</button>
 					</form>
 
-					{/* Divider */}
 					<div className='my-6 border-t border-slate-100' />
 
-					{/* Register */}
 					<div className='text-center text-sm text-slate-500'>
 						Не маєте облікового запису?{' '}
 						<Link
