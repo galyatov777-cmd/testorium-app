@@ -1,5 +1,5 @@
 import React from 'react';
-import { GraduationCap, BookOpenCheck } from 'lucide-react';
+import { Users, UsersIcon, ZoomIn } from 'lucide-react';
 import WhomElement from '@/components/WhomElement/WhomElement';
 import Image from 'next/image';
 import imagePlatform from '@/public/teston.jpg';
@@ -13,14 +13,16 @@ const Whom = () => {
 					<div className='flex gap-5'>
 						<WhomElement
 							title='Здобувачі освіти'
-							description='Проходьте тестування з освітніх компонентів у зручному інтерфейсі з будь-якого пристрою. Відстежуйте прогрес і готуйтеся до підсумкового контролю.'
-							icon={<GraduationCap size={24} />}
+							description='Проходьте тестування у зручному інтерфейсі з будь-якого
+									пристрою.'
+							icon={<UsersIcon size={24} />}
 						/>
 
 						<WhomElement
-							title='Науково-педагогічні працівники'
-							description='Створюйте тести з дисциплін, формуйте банки питань та відстежуйте успішність академічних груп у реальному часі.'
-							icon={<BookOpenCheck size={24} />}
+							title='Викладачі'
+							description='Створюйте бази питань та керуйте процесом оцінювання в
+									реальному часі.'
+							icon={<ZoomIn size={24} />}
 						/>
 					</div>
 				</div>

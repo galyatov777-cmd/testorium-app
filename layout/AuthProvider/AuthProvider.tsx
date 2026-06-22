@@ -48,14 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			}
 
 			try {
-				const res = await fetch(
-					'https://testorium-server-production.up.railway.app/auth/me',
-					{
-						headers: {
-							Authorization: `Bearer ${storedToken}`,
-						},
+				const res = await fetch('http://localhost:3003/auth/me', {
+					headers: {
+						Authorization: `Bearer ${storedToken}`,
 					},
-				);
+				});
 
 				if (!res.ok) {
 					throw new Error('Unauthorized');

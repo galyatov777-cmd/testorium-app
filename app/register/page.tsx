@@ -64,7 +64,7 @@ export default function Register() {
 
 		try {
 			const res = await fetch(
-				'https://testorium-server-production.up.railway.app/auth/register',
+				'http://localhost:3003/auth/register',
 				{
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },

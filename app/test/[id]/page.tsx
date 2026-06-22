@@ -107,6 +107,7 @@ function formatTime(s: number) {
 const ResultScreen: React.FC<{
 	questions: Question[];
 	answers: UserAnswers;
+	textAnswers: Record<number, string>;
 	results: Results;
 	timeTaken: number;
 	onRetry: () => void;
@@ -115,6 +116,7 @@ const ResultScreen: React.FC<{
 }> = ({
 	questions,
 	answers,
+	textAnswers,
 	results,
 	timeTaken,
 	onRetry,
@@ -235,14 +237,13 @@ const ResultScreen: React.FC<{
 						const selectedIds = answers[q.id] ?? [];
 
 						const renderUserAnswer = () => {
+							if (q.type === 'text') {
+								return textAnswers[q.id] || '—';
+							}
 							if (!selectedIds.length) return '—';
 							if (q.type === 'truefalse') {
 								const ans = q.answers?.find(a => selectedIds.includes(a.id));
 								return ans?.text === 'true' ? 'Так' : 'Ні';
-							}
-							if (q.type === 'text') {
-								const ans = q.answers?.find(a => selectedIds.includes(a.id));
-								return ans?.text ?? '—';
 							}
 							return (
 								q.answers
@@ -332,9 +333,7 @@ const TakeTestPage: React.FC = () => {
 	useEffect(() => {
 		const fetchTest = async () => {
 			try {
-				const res = await fetch(
-					`https://testorium-server-production.up.railway.app/tests/${id}`,
-				);
+				const res = await fetch(`http://localhost:3003/tests/${id}`);
 				if (!res.ok) throw new Error('Failed to load test');
 				const data = await res.json();
 				setTest(data);
@@ -351,17 +350,14 @@ const TakeTestPage: React.FC = () => {
 	const handleStart = async () => {
 		try {
 			const token = localStorage.getItem('token');
-			const res = await fetch(
-				'https://testorium-server-production.up.railway.app/tests/start',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						...(token ? { Authorization: `Bearer ${token}` } : {}),
-					},
-					body: JSON.stringify({ test_id: test!.id }),
+			const res = await fetch('http://localhost:3003/tests/start', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {}),
 				},
-			);
+				body: JSON.stringify({ test_id: test!.id }),
+			});
 			const data = await res.json();
 			setResultId(data.result_id);
 			setStarted(true);
@@ -392,21 +388,18 @@ const TakeTestPage: React.FC = () => {
 
 			console.log('SUBMIT PAYLOAD:', payload);
 
-			const res = await fetch(
-				'https://testorium-server-production.up.railway.app/tests/answer',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						...(token
-							? {
-									Authorization: `Bearer ${token}`,
-								}
-							: {}),
-					},
-					body: JSON.stringify(payload),
+			const res = await fetch('http://localhost:3003/tests/answer', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					...(token
+						? {
+								Authorization: `Bearer ${token}`,
+							}
+						: {}),
 				},
-			);
+				body: JSON.stringify(payload),
+			});
 
 			const data = await res.json();
 
@@ -525,6 +518,7 @@ const TakeTestPage: React.FC = () => {
 				test={test}
 				questions={questions}
 				answers={answers}
+				textAnswers={textAnswers}
 				results={results}
 				timeTaken={timeTaken}
 				finalScore={finalScore}

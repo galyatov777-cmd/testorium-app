@@ -3,28 +3,25 @@ import { BookOpen, CheckCircle, BarChart3 } from 'lucide-react';
 const Features = () => {
 	return (
 		<section className='px-6 py-24 max-w-7xl mx-auto'>
-			<h2 className='text-3xl font-bold mb-4 text-center'>
-				Чому здобувачі обирають Testorium?
+			<h2 className='text-3xl font-bold mb-16 text-center'>
+				Чому обирають Testorium?
 			</h2>
-			<p className='text-center text-slate-500 mb-16 max-w-xl mx-auto'>
-				Все необхідне для підготовки та проходження тестування з освітніх компонентів — в одному місці.
-			</p>
 			<div className='grid md:grid-cols-3 gap-12'>
 				{[
 					{
 						icon: <BookOpen className='text-indigo-600' />,
-						title: 'Тести з кожної дисципліни',
-						desc: 'Проходьте тестування з усіх освітніх компонентів свого навчального плану в одному місці, без зайвих реєстрацій.',
+						title: 'Гнучкість компонентів',
+						desc: 'Можливість адаптації тестів під будь-яку дисципліну чи освітній модуль.',
 					},
 					{
 						icon: <CheckCircle className='text-indigo-600' />,
 						title: 'Миттєвий результат',
-						desc: 'Дізнайтесь свій бал одразу після завершення тесту — детальний розбір відповідей доступний без очікування.',
+						desc: "Автоматична перевірка та надання зворотного зв'язку здобувачам освіти.",
 					},
 					{
 						icon: <BarChart3 className='text-indigo-600' />,
-						title: 'Відстеження прогресу',
-						desc: 'Аналізуйте свою успішність по кожному компоненту, виявляйте прогалини у знаннях і вдосконалюйтесь.',
+						title: 'Аналітика',
+						desc: 'Детальна статистика успішності для викладачів та адміністрації.',
 					},
 				].map((item, i) => (
 					<div

@@ -1,4 +1,4 @@
-const API_URL = 'https://testorium-server-production.up.railway.app';
+const API_URL = 'http://localhost:3003';
 
 export const loginRequest = async (email: string, password: string) => {
 	const response = await fetch(`${API_URL}/auth/login`, {
